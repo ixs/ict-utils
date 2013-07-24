@@ -440,11 +440,14 @@ class ICT_PhonebookComm(ICT_Comm):
         self.send(self.prepare_packet((0xf0, 0x80), self.prepare_payload(payload)))
         resp = self.recv()
         payload = self.parse_packet(resp)
-        id, name_len, name, num_len, num = struct.unpack("!12xhb20sb24s9x", payload)
+        id, name_len, name, num_len, num, shortdial, bundle, callthrough, msn_len, msn = struct.unpack("!12xhb20sb24sxbbbb4s", payload)
         name = name[0:name_len]
         num = num[0:num_len]
-        print id, name, num
+        msn = msn[0:msn_len]
+        return {"id": id, "name": name, "number": num, "bundle": bundle, "shortdial": shortdial, "msn": msn, "callthrough": callthrough}
 
+    def set_entry(self, id, name, number, shortdial=-1, bundle=-1, callthrough=0, msn=''):
+        pass
 
 class ICT_ServiceComm(ICT_Comm):
 
@@ -504,11 +507,11 @@ class ICT_ServiceComm(ICT_Comm):
 if __name__ == '__main__':
     pbx = '192.168.2.250'
     ict = ICT_PhonebookComm(pbx)
-#    ict.debug = True
+    ict.debug = False
     ict.connect()
     ict.init()
     ict.login()
     for i in range(0, ict.get_count_entries()):
-        ict.get_entry(i)
+        print ict.get_entry(i)
     ict.logout()
     ict.disconnect()
