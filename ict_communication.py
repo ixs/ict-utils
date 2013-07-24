@@ -440,14 +440,19 @@ class ICT_PhonebookComm(ICT_Comm):
         self.send(self.prepare_packet((0xf0, 0x80), self.prepare_payload(payload)))
         resp = self.recv()
         payload = self.parse_packet(resp)
-        id, name_len, name, num_len, num, shortdial, bundle, callthrough, msn_len, msn = struct.unpack("!12xhb20sb24sxbbbb4s", payload)
+        id, name_len, name, num_len, num, shortdial, bundle, callthrough, msn_len, msn = struct.unpack("!hb20sb24shbbb4s", payload[12:])
         name = name[0:name_len]
         num = num[0:num_len]
         msn = msn[0:msn_len]
         return {"id": id, "name": name, "number": num, "bundle": bundle, "shortdial": shortdial, "msn": msn, "callthrough": callthrough}
 
-    def set_entry(self, id, name, number, shortdial=-1, bundle=-1, callthrough=0, msn=''):
-        pass
+    def set_entry(self, id, name, num, shortdial=-1, bundle=-1, callthrough=0, msn=''):
+        name_len = len(str(name))
+        num_len = len(str(num))
+        msn_len = len(str(msn))
+        return struct.pack("!hb20sb24shbbb4s", id, name_len, str(name), num_len, str(num), shortdial, bundle, callthrough, msn_len, str(msn))
+        
+ 
 
 class ICT_ServiceComm(ICT_Comm):
 
