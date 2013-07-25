@@ -433,6 +433,38 @@ class ICT_PhonebookComm(ICT_Comm):
         if not self.parse_packet(resp)[11] == chr(0x01):
             raise RuntimeError("CommunicationError: Error executing query")
         return struct.unpack('!h', self.parse_packet(resp)[12:])[0]
+
+    def set_count_entries(self, num):
+        payload = array('B',(0x03, 0x01, 0x1d, 0x00))
+        payload.extend(array('B',(0x05, 0x33, 0x00, 0x01)))
+        payload = payload.tostring() + struct.pack("!h", num)
+        packet = self.prepare_packet((0xf0, 0x80), self.prepare_payload(payload))
+        self.send(packet)
+        resp = self.recv()
+        if not self.parse_packet(resp)[8] == chr(0x01):
+            raise RuntimeError("CommunicationError: Error executing query")
+
+    def get_local_prefix(self):
+        payload = array('B',(0x03, 0x01, 0x1c, 0x00))
+        payload.extend(array('B',(0x05, 0x34, 0x00, 0x01, 0x00, 0x00)))
+        packet = self.prepare_packet((0xf0, 0x80), self.prepare_payload(payload.tostring()))
+        self.send(packet)
+        resp = self.recv()
+        if not self.parse_packet(resp)[11] == chr(0x01):
+            raise RuntimeError("CommunicationError: Error executing query")
+        prefix_len, prefix = struct.unpack('!b10s', self.parse_packet(resp)[14:])
+        prefix = prefix[0:prefix_len]
+        return prefix
+
+    def set_local_prefix(self, num):
+        payload = array('B',(0x03, 0x01, 0x1d, 0x00))
+        payload.extend(array('B',(0x10, 0x34, 0x00, 0x01, 0x00, 0x00)))
+        payload = payload.tostring() + struct.pack('!b10s', len(str(num)), str(num))
+        packet = self.prepare_packet((0xf0, 0x80), self.prepare_payload(payload))
+        self.send(packet)
+        resp = self.recv()
+        if not self.parse_packet(resp)[8] == chr(0x01):
+            raise RuntimeError("CommunicationError: Error executing query")
         
     def get_entry(self, id):
         payload = self.chunk_data(1, array('B',(0x01, 0x1c, 0x00)).tostring())
@@ -447,12 +479,23 @@ class ICT_PhonebookComm(ICT_Comm):
         return {"id": id, "name": name, "number": num, "bundle": bundle, "shortdial": shortdial, "msn": msn, "callthrough": callthrough}
 
     def set_entry(self, id, name, num, shortdial=-1, bundle=-1, callthrough=0, msn=''):
-        name_len = len(str(name))
-        num_len = len(str(num))
-        msn_len = len(str(msn))
-        return struct.pack("!hb20sb24shbbb4s", id, name_len, str(name), num_len, str(num), shortdial, bundle, callthrough, msn_len, str(msn))
-        
+        payload = self.chunk_data(1, array('B',(0x01, 0x1d, 0x00)).tostring())
+        payload += self.chunk_data(1, array('B',(0x32, 0x00, 0x01)).tostring() + 
+            struct.pack("!hb20sb24shbbb4s18x", id, len(str(name)), str(name), len(str(num)), str(num), shortdial, bundle, callthrough, len(str(msn)), str(msn)))
+        self.send(self.prepare_packet((0xf0, 0x80), self.prepare_payload(payload)))
+        resp = self.recv()
+        if not self.parse_packet(resp)[8] == chr(0x01):
+            raise RuntimeError("CommunicationError: Error executing query")
  
+    def commit_phonebook(self):
+        payload = array('B',(0x03, 0x01, 0x1d, 0x00))
+        payload.extend(array('B',(0x03, 0x33, 0x01, 0x00)))
+        packet = self.prepare_packet((0xf0, 0x80), self.prepare_payload(payload.tostring()))
+        self.send(packet)
+        resp = self.recv()
+        if not self.parse_packet(resp)[8] == chr(0x01):
+            raise RuntimeError("CommunicationError: Error executing query")
+
 
 class ICT_ServiceComm(ICT_Comm):
 
@@ -512,11 +555,10 @@ class ICT_ServiceComm(ICT_Comm):
 if __name__ == '__main__':
     pbx = '192.168.2.250'
     ict = ICT_PhonebookComm(pbx)
-    ict.debug = False
+    ict.debug = True
     ict.connect()
     ict.init()
     ict.login()
-    for i in range(0, ict.get_count_entries()):
-        print ict.get_entry(i)
+    ict.set_count_entries(0)
     ict.logout()
     ict.disconnect()

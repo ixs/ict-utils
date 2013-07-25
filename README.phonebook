@@ -1,0 +1,17 @@
+Simple tool to work with the phonebook included in the PBX.
+
+upload
+download
+erase
+print
+
+CSV format:
+
+name,number,shortdial,bundle,callthrough,msn
+
+name: truncated to 20 characters
+number: truncated to 24 characters
+shortdial: 0-999. Needs to be unique. -1 means disabled, no speed dial.
+bundle: 0-19. -1 means disabled, no special bundle selected.
+callthrough: 0/1. Forbid or allow callthrough.
+msn: 0-9999. Can be empty.
