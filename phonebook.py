@@ -39,27 +39,32 @@ def utf_8_encoder(unicode_csv_data):
 def parse_cmdline():
     parser = optparse.OptionParser()
 
-    usage = "usage: %prog [options] <upload|download|print> filename"
+    usage = "usage: %prog [options] <upload|download|erase|print> filename"
     parser = optparse.OptionParser(usage=usage)
     parser.add_option('-i', '--ip', default = "192.168.1.250", dest = "host", help = 'PBX IP address (Default: 192.168.1.250)')
     parser.add_option('-u', '--username', dest = "user", default = "Service", help = 'Username (Default: Service)')
     parser.add_option('-p', '--password', dest = "pass", default = "Service", help = 'Password (Default: Service)')
     parser.add_option('-l', '--local', dest = "prefix", default = 0, help = 'Local prefix for your PBX')
     parser.add_option('-d', '--debug', dest = "debug", action = "store_true", default = False, help = 'Debug. Dump every packet.')
-    # parser.add_option('-a', '--action', dest = "action", choices = ("upload", "download"), help = 'Action to take')
     (opts, args) = parser.parse_args()
 
     if len(args) == 0:
         parser.error("Invalid arguments. Need action specification..")
 
-    if len(args) > 0 and args[0].lower() not in ("upload", "download", "print"):
+    if len(args) > 0 and args[0].lower() not in ("upload", "download", "print", "erase"):
         parser.error("Invalid action specified. Must bei either upload, download, erase or print.")
 
     if len(args) !=2 and args[0] not in ("erase", "print"):
         parser.error("Invalid arguments. Upload and download action need a filename.")
 
-    return (opts, args)
-
+    if len(args) == 2:
+        (action, file) = args
+    elif len(args) == 1:
+        action = args[0]
+        file = None
+    else:
+        pass
+    return (opts, action, file)
 
 def pretty_print(ict):
     print "Local prefix: %s" % ict.get_local_prefix()
@@ -128,21 +133,18 @@ def csv_import(ict, file, prefix):
 
 
 def main():
-    (opts, args) = parse_cmdline()
-    if len(args) == 2:
-        (action, file) = args
-    elif len(args) == 1:
-        action = args[0]
-    else:
-        raise RuntimeError()
+    (opts, action, file) = parse_cmdline()
+
     ict = ict_communication.ICT_PhonebookComm(opts.host)
     ict.debug = opts.debug
     ict.connect()
     ict.init()
     ict.login()
-    
+
     if action == "print":
         pretty_print(ict)
+    elif action == "erase":
+        erase(ict)
     elif action == "download":
         csv_export(ict, file)
     elif action == "upload":
