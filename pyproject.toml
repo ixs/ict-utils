@@ -1,0 +1,27 @@
+[project]
+name = "ict-utils"
+version = "0.1.0"
+description = "Utilities for Elmeg/Funkwerk/Teldat ICT phone exchanges"
+readme = "README.md"
+authors = [
+    { name = "Andreas Thienemann", email = "andreas@bawue.net" }
+]
+requires-python = ">=3.14"
+dependencies = [
+    "psutil>=7.2.2",
+]
+
+[project.scripts]
+phonebook = "ict_utils.phonebook:main"
+lcr = "ict_utils.lcr:main"
+ict-controlcenter = "ict_utils.controlcenter:main"
+
+[build-system]
+requires = ["uv_build>=0.9.27,<0.10.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "ruff>=0.16.9",
+    "ty>=0.0.84",
+]
