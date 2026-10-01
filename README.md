@@ -17,4 +17,20 @@ ControlCenter streams syslog messages and accepts `-i IP` and `-d`.
 
 Phonebook CSV files use UTF-8 with a header; see [README.phonebook](README.phonebook)
 for the fields. PBX protocol text uses Latin-1 to preserve single-byte fields;
-LCR XML transfers preserve the original bytes. Actual PBX interoperability still needs a check against the device.
+LCR XML transfers preserve the original bytes. Hardware-free tests cover the
+protocol, transfers, CSV files, CLI parsing, discovery, and syslog buffering.
+Actual PBX interoperability still needs a check against the device.
+
+```sh
+make check  # pytest first, then Ruff lint/format and ty
+make build  # runs all checks before building the wheel and source archive
+```
+
+For automatic style fixes:
+
+```sh
+uv run pytest
+uv run ruff check --fix
+uv run ruff format
+uv run ty check
+```
